@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Server,
   LayoutGrid,
+  Map,
   Users,
   Plus,
   LogOut,
@@ -84,6 +85,7 @@ export function AppShell({
 
   const nav = [
     { href: "/dashboard", label: "Cabinets", icon: LayoutGrid },
+    { href: "/floors", label: "Floors", icon: Map },
     { href: "/org", label: "Team", icon: Users },
   ];
 

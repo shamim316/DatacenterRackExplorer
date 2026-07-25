@@ -38,7 +38,13 @@ function Seg<T extends string>({
   );
 }
 
-export function NewCabinetForm({ orgId }: { orgId: string }) {
+export function NewCabinetForm({
+  orgId,
+  returnToFloorId = null,
+}: {
+  orgId: string;
+  returnToFloorId?: string | null;
+}) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -77,7 +83,11 @@ export function NewCabinetForm({ orgId }: { orgId: string }) {
       .single();
     setBusy(false);
     if (error) setError(error.message);
-    else router.push(`/cabinets/${data.id}`);
+    else if (returnToFloorId) {
+      // Created from a floor: go back so it can be placed on the plan.
+      router.push(`/floors/${returnToFloorId}`);
+      router.refresh();
+    } else router.push(`/cabinets/${data.id}`);
   }
 
   return (

@@ -1,16 +1,11 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrgId, roleInOrg, canEdit, type Membership } from "@/lib/org";
-import { NewCabinetForm } from "@/components/NewCabinetForm";
+import { NewFloorForm } from "@/components/floor/NewFloorForm";
 
-export const metadata = { title: "New cabinet" };
+export const metadata = { title: "New floor" };
 
-export default async function NewCabinetPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ floor?: string }>;
-}) {
-  const { floor } = await searchParams;
+export default async function NewFloorPage() {
   const supabase = await createClient();
   const { data: membershipsRaw } = await supabase
     .from("organization_members")
@@ -19,7 +14,7 @@ export default async function NewCabinetPage({
   const activeOrgId = await getActiveOrgId(memberships);
   const role = roleInOrg(memberships, activeOrgId);
 
-  if (!activeOrgId || !canEdit(role)) redirect("/dashboard");
+  if (!activeOrgId || !canEdit(role)) redirect("/floors");
 
-  return <NewCabinetForm orgId={activeOrgId} returnToFloorId={floor ?? null} />;
+  return <NewFloorForm orgId={activeOrgId} />;
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Server, MapPin, Boxes } from "lucide-react";
+import { Plus, Server, MapPin, Boxes, Map as MapIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrgId, roleInOrg, canEdit, type Membership } from "@/lib/org";
 import type { Cabinet } from "@/lib/types";
@@ -35,7 +35,7 @@ export default async function DashboardPage() {
 
   const { data: cabinets, count } = await supabase
     .from("cabinets")
-    .select("*", { count: "exact" })
+    .select("*, floors ( name )", { count: "exact" })
     .eq("org_id", activeOrgId)
     .order("created_at", { ascending: true });
 
@@ -83,7 +83,7 @@ export default async function DashboardPage() {
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {(cabinets as Cabinet[]).map((cab) => (
+          {(cabinets as (Cabinet & { floors: { name: string } | null })[]).map((cab) => (
             <Link
               key={cab.id}
               href={`/cabinets/${cab.id}`}
@@ -110,6 +110,11 @@ export default async function DashboardPage() {
                 <span className="chip">
                   {deviceCounts.get(cab.id) ?? 0} devices
                 </span>
+                {cab.floors?.name && (
+                  <span className="chip !text-accent !border-accent/40">
+                    <MapIcon size={11} /> {cab.floors.name}
+                  </span>
+                )}
               </div>
             </Link>
           ))}

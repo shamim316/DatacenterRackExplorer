@@ -35,11 +35,31 @@ export interface OrgInvite {
   created_at: string;
 }
 
+export interface Floor {
+  id: string;
+  org_id: string;
+  name: string;
+  description: string | null;
+  grid_cols: number;
+  grid_rows: number;
+  notes: unknown | null;
+  notes_html: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type FloorRotation = 0 | 90 | 180 | 270;
+
 export interface Cabinet {
   id: string;
   org_id: string;
   name: string;
   location: string | null;
+  floor_id: string | null;
+  floor_x: number | null;
+  floor_y: number | null;
+  floor_rotation: FloorRotation;
   post_type: CabinetPostType;
   height_u: number;
   door: DoorType;
@@ -110,6 +130,46 @@ export function devicesCollide(
   const sameFace = a.face === b.face;
   const eitherFull = a.depth === "full" || b.depth === "full";
   return sameFace || eitherFull;
+}
+
+/** Footprint of a cabinet on the floor grid, in tiles (cols × rows).
+ *  A 4-post cabinet is 1 tile wide × 2 deep; a 2-post rack is 1 × 1.
+ *  Rotation 90/270 swaps the axes. */
+export function floorFootprint(
+  cabinet: Pick<Cabinet, "post_type" | "floor_rotation">
+): { w: number; h: number } {
+  const deep = cabinet.post_type === "four_post" ? 2 : 1;
+  const rotated = cabinet.floor_rotation === 90 || cabinet.floor_rotation === 270;
+  return rotated ? { w: deep, h: 1 } : { w: 1, h: deep };
+}
+
+export function floorPlacementCollides(
+  cabinet: Pick<Cabinet, "id" | "post_type" | "floor_rotation">,
+  x: number,
+  y: number,
+  others: Cabinet[]
+): Cabinet | undefined {
+  const fp = floorFootprint(cabinet);
+  return others.find((o) => {
+    if (o.id === cabinet.id || o.floor_x === null || o.floor_y === null) return false;
+    const ofp = floorFootprint(o);
+    return (
+      x < o.floor_x + ofp.w &&
+      o.floor_x < x + fp.w &&
+      y < o.floor_y + ofp.h &&
+      o.floor_y < y + fp.h
+    );
+  });
+}
+
+export function placementInBounds(
+  cabinet: Pick<Cabinet, "post_type" | "floor_rotation">,
+  x: number,
+  y: number,
+  floor: Pick<Floor, "grid_cols" | "grid_rows">
+): boolean {
+  const fp = floorFootprint(cabinet);
+  return x >= 0 && y >= 0 && x + fp.w <= floor.grid_cols && y + fp.h <= floor.grid_rows;
 }
 
 export function findCollision(

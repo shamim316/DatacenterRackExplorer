@@ -3,6 +3,7 @@
 A multi-user SaaS for documenting datacenter cabinets, visualized in interactive 3D.
 
 - **3D cabinet view** (React Three Fiber): 2-post racks and 4-post cabinets, configurable height (48U/45U/42U/36U/24U/… or custom), doors (front/rear/both/open, with an open-door toggle), vertical PDUs (front/rear, one or both sides), power feed from under a raised floor or overhead, and cable entry from the top or bottom — every option is rendered in the scene.
+- **Floor plans**: design whole rooms on a 600 mm tile grid. Drag cabinets around a top-down plan (with rotation and collision checks), see the entire floor rendered in 3D with every cabinet's real contents, and double-click any cabinet to open it.
 - **2D rack elevation editor**: drag devices into U-slots on the front/rear elevation; collisions and out-of-range placements are rejected. Devices have type, height (U), mounting face and depth (full / 3/4 / 1/2 / short).
 - **WYSIWYG notes** (TipTap) on the cabinet and on every device.
 - **Teams**: organizations with owner/admin/editor/viewer roles and email invites, enforced end-to-end by Postgres row-level security.
@@ -16,7 +17,7 @@ Stack: Next.js (App Router, TypeScript) · Tailwind CSS 4 · React Three Fiber �
 ## 1. Set up Supabase (cloud)
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor** and run the contents of [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql). This creates all tables, triggers and row-level-security policies.
+2. Open **SQL Editor** and run the migrations in order: [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql), then [`supabase/migrations/0002_floors.sql`](supabase/migrations/0002_floors.sql). These create all tables, triggers and row-level-security policies. (If you already ran 0001 for v1, just run 0002.)
 3. In **Project Settings → API**, copy the *Project URL* and *anon public* key — these are your two environment variables.
 
 ### Auth configuration
@@ -61,8 +62,9 @@ src/middleware.ts       Session refresh + route protection
 src/lib/supabase/       Browser/server/middleware Supabase clients
 src/lib/types.ts        Domain types, collision rules
 src/lib/export/         Markdown/plain-text converters, PDF document
-src/app/                Landing, auth, dashboard, cabinet pages, export API
-src/components/editor/  CabinetEditor, RackElevation (2D), Rack3D, panels, TipTap notes
+src/app/                Landing, auth, dashboard, cabinet + floor pages, export API
+src/components/editor/  CabinetEditor, RackElevation (2D), Rack3D, CabinetModel, panels, notes
+src/components/floor/   FloorEditor, FloorPlan2D (top-down), Floor3D (room view)
 ```
 
 ## Roles
