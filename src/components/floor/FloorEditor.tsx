@@ -11,17 +11,25 @@ import {
   Loader2,
   Plus,
   Server,
+  MousePointer2,
+  Snowflake,
+  Flame,
+  Eraser,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
   floorPlacementCollides,
   placementInBounds,
+  AISLE_COLORS,
+  AISLE_LABELS,
+  type AisleKind,
   type Cabinet,
   type Device,
   type Floor,
   type FloorRotation,
+  type FloorZone,
 } from "@/lib/types";
-import { FloorPlan2D } from "./FloorPlan2D";
+import { FloorPlan2D, type PlanTool } from "./FloorPlan2D";
 import { FloorPanel } from "./FloorPanel";
 import { CabinetCard } from "./CabinetCard";
 
@@ -53,6 +61,7 @@ export function FloorEditor({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showFloorPanel, setShowFloorPanel] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [tool, setTool] = useState<PlanTool>("select");
 
   const devicesByCabinet = useMemo(() => {
     const map = new Map<string, Device[]>();
@@ -102,6 +111,31 @@ export function FloorEditor({
       router.refresh();
     }
   }, [supabase, floor.id, floor.name, router, flagError]);
+
+  // ---------- Aisle zones ----------
+  const zones = useMemo<FloorZone[]>(() => floor.zones ?? [], [floor.zones]);
+
+  const addZone = useCallback(
+    (kind: AisleKind, x: number, y: number, w: number, h: number) => {
+      const zone: FloorZone = {
+        id: crypto.randomUUID(),
+        kind,
+        x,
+        y,
+        w,
+        h,
+      };
+      updateFloor({ zones: [...zones, zone] });
+    },
+    [zones, updateFloor]
+  );
+
+  const removeZone = useCallback(
+    (id: string) => {
+      updateFloor({ zones: zones.filter((z) => z.id !== id) });
+    },
+    [zones, updateFloor]
+  );
 
   // ---------- Placement ops ----------
   const patchCabinet = useCallback(
@@ -239,12 +273,54 @@ export function FloorEditor({
             <span className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
               Floor plan
             </span>
-            <span className="text-[11px] text-ink-faint">drag to move · tile = 600 mm</span>
+            {!readOnly && (
+              <div className="seg" role="toolbar" aria-label="Plan tools">
+                <button
+                  data-active={tool === "select"}
+                  onClick={() => setTool("select")}
+                  title="Select / move cabinets"
+                >
+                  <MousePointer2 size={13} />
+                </button>
+                <button
+                  data-active={tool === "cold"}
+                  onClick={() => setTool("cold")}
+                  title="Draw cold aisle (drag on the grid)"
+                  style={tool === "cold" ? { color: AISLE_COLORS.cold } : undefined}
+                >
+                  <Snowflake size={13} />
+                </button>
+                <button
+                  data-active={tool === "hot"}
+                  onClick={() => setTool("hot")}
+                  title="Draw hot aisle (drag on the grid)"
+                  style={tool === "hot" ? { color: AISLE_COLORS.hot } : undefined}
+                >
+                  <Flame size={13} />
+                </button>
+                <button
+                  data-active={tool === "erase"}
+                  onClick={() => setTool("erase")}
+                  title="Erase aisle (click a zone)"
+                >
+                  <Eraser size={13} />
+                </button>
+              </div>
+            )}
           </div>
+          <p className="px-4 pb-1 text-[11px] text-ink-faint">
+            {tool === "select"
+              ? "Drag cabinets to move · tile = 600 mm"
+              : tool === "erase"
+                ? "Click an aisle zone to remove it"
+                : `Drag on the grid to mark a ${AISLE_LABELS[tool].toLowerCase()}`}
+          </p>
           <div className="min-h-0 overflow-auto px-4 pb-2 grow-0 shrink">
             <FloorPlan2D
               floor={floor}
               cabinets={placed}
+              zones={zones}
+              tool={readOnly ? "select" : tool}
               selectedId={selectedId}
               readOnly={readOnly}
               onSelect={(id) => {
@@ -252,7 +328,25 @@ export function FloorEditor({
                 setShowFloorPanel(false);
               }}
               onMove={moveCabinet}
+              onAddZone={addZone}
+              onRemoveZone={removeZone}
             />
+            <div className="flex items-center gap-2 mt-2">
+              <span className="chip">
+                <span
+                  className="h-2.5 w-2.5 rounded-sm"
+                  style={{ background: AISLE_COLORS.cold }}
+                />
+                Cold aisle
+              </span>
+              <span className="chip">
+                <span
+                  className="h-2.5 w-2.5 rounded-sm"
+                  style={{ background: AISLE_COLORS.hot }}
+                />
+                Hot aisle
+              </span>
+            </div>
           </div>
 
           <div className="border-t border-edge px-4 pt-3 pb-1 flex items-center justify-between">
@@ -301,6 +395,7 @@ export function FloorEditor({
         <div className="flex-1 min-w-0 flex flex-col bg-sunken">
           <Floor3D
             floor={floor}
+            zones={zones}
             cabinets={placed}
             devicesByCabinet={devicesByCabinet}
             selectedId={selectedId}

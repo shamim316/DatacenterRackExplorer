@@ -35,6 +35,28 @@ export interface OrgInvite {
   created_at: string;
 }
 
+export type AisleKind = "hot" | "cold";
+
+/** Rectangular hot/cold aisle zone on the floor tile grid. */
+export interface FloorZone {
+  id: string;
+  kind: AisleKind;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export const AISLE_COLORS: Record<AisleKind, string> = {
+  cold: "#3aa0ff",
+  hot: "#ff5a4d",
+};
+
+export const AISLE_LABELS: Record<AisleKind, string> = {
+  cold: "Cold aisle",
+  hot: "Hot aisle",
+};
+
 export interface Floor {
   id: string;
   org_id: string;
@@ -42,6 +64,7 @@ export interface Floor {
   description: string | null;
   grid_cols: number;
   grid_rows: number;
+  zones: FloorZone[];
   notes: unknown | null;
   notes_html: string | null;
   created_by: string | null;

@@ -6,19 +6,49 @@ import { OrbitControls, Html } from "@react-three/drei";
 import { CabinetModel } from "@/components/editor/CabinetModel";
 import {
   floorFootprint,
+  AISLE_COLORS,
   type Cabinet,
   type Device,
   type Floor,
+  type FloorZone,
 } from "@/lib/types";
 import { U, BASE_H, TOP_H, TILE, FLOOR_DROP } from "@/lib/rack-dims";
 
 interface Props {
   floor: Floor;
+  zones: FloorZone[];
   cabinets: Cabinet[]; // placed only
   devicesByCabinet: Map<string, Device[]>;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onOpen: (id: string) => void;
+}
+
+/** Tinted aisle region: a floor decal plus a soft air volume. */
+function AisleZone({ zone, floor }: { zone: FloorZone; floor: Floor }) {
+  const w = floor.grid_cols * TILE;
+  const d = floor.grid_rows * TILE;
+  const zw = zone.w * TILE;
+  const zd = zone.h * TILE;
+  const cx = -w / 2 + (zone.x + zone.w / 2) * TILE;
+  const cz = -d / 2 + (zone.y + zone.h / 2) * TILE;
+  const color = AISLE_COLORS[zone.kind];
+  const airH = 2.0;
+
+  return (
+    <group position={[cx, 0, cz]}>
+      {/* floor decal */}
+      <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[zw - 0.02, zd - 0.02]} />
+        <meshBasicMaterial color={color} transparent opacity={0.22} depthWrite={false} />
+      </mesh>
+      {/* soft air volume */}
+      <mesh position={[0, airH / 2 + 0.01, 0]}>
+        <boxGeometry args={[zw - 0.04, airH, zd - 0.04]} />
+        <meshBasicMaterial color={color} transparent opacity={0.05} depthWrite={false} />
+      </mesh>
+    </group>
+  );
 }
 
 /** Rectangular raised floor with tile grid lines. */
@@ -163,6 +193,7 @@ function PlacedCabinet({
 
 export default function Floor3D({
   floor,
+  zones,
   cabinets,
   devicesByCabinet,
   selectedId,
@@ -188,6 +219,10 @@ export default function Floor3D({
       <directionalLight position={[-span, span * 0.7, -span]} intensity={0.45} />
 
       <RoomFloor cols={floor.grid_cols} rows={floor.grid_rows} />
+
+      {zones.map((z) => (
+        <AisleZone key={z.id} zone={z} floor={floor} />
+      ))}
 
       {cabinets.map((cab) => (
         <PlacedCabinet

@@ -4,6 +4,7 @@ A multi-user SaaS for documenting datacenter cabinets, visualized in interactive
 
 - **3D cabinet view** (React Three Fiber): 2-post racks and 4-post cabinets, configurable height (48U/45U/42U/36U/24U/… or custom), doors (front/rear/both/open, with an open-door toggle), vertical PDUs (front/rear, one or both sides), power feed from under a raised floor or overhead, and cable entry from the top or bottom — every option is rendered in the scene.
 - **Floor plans**: design whole rooms on a 600 mm tile grid. Drag cabinets around a top-down plan (with rotation and collision checks), see the entire floor rendered in 3D with every cabinet's real contents, and double-click any cabinet to open it.
+- **Hot/cold aisles**: mark aisle zones by dragging on the floor plan with the snowflake/flame tools. Zones show as labeled tinted regions on the 2D plan and as translucent colored volumes in the 3D room; the eraser tool removes them.
 - **2D rack elevation editor**: drag devices into U-slots on the front/rear elevation; collisions and out-of-range placements are rejected. Devices have type, height (U), mounting face and depth (full / 3/4 / 1/2 / short).
 - **WYSIWYG notes** (TipTap) on the cabinet and on every device.
 - **Teams**: organizations with owner/admin/editor/viewer roles and email invites, enforced end-to-end by Postgres row-level security.
@@ -17,7 +18,7 @@ Stack: Next.js (App Router, TypeScript) · Tailwind CSS 4 · React Three Fiber �
 ## 1. Set up Supabase (cloud)
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor** and run the migrations in order: [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql), then [`supabase/migrations/0002_floors.sql`](supabase/migrations/0002_floors.sql). These create all tables, triggers and row-level-security policies. (If you already ran 0001 for v1, just run 0002.)
+2. Open **SQL Editor** and run the migrations in order: [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql), [`supabase/migrations/0002_floors.sql`](supabase/migrations/0002_floors.sql), then [`supabase/migrations/0003_aisle_zones.sql`](supabase/migrations/0003_aisle_zones.sql). These create all tables, triggers and row-level-security policies. (Already ran some for an earlier version? Just run the ones you're missing, in order.)
 3. In **Project Settings → API**, copy the *Project URL* and *anon public* key — these are your two environment variables.
 
 ### Auth configuration
